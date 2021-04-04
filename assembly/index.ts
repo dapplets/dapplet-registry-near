@@ -6,7 +6,7 @@ import { math } from "near-sdk-as";
 class StorageRef {
     constructor(
         public hash: Uint8Array,
-        public uris: string[]
+        public uris: Uint8Array[]
     ) { }
 }
 
@@ -20,14 +20,14 @@ class ModuleInfo {
         public owner: string,
         public interfaces: string[],
         public icon: StorageRef,
-        public flags: u32
+        public flags: i32
     ) { }
 }
 
 @nearBindgen
 class VersionInfo {
     constructor(
-        public modIdx: u32,
+        public modIdx: i32,
         public branch: string,
         public major: u8,
         public minor: u8,
@@ -76,8 +76,8 @@ class VersionNumber {
 
 const versionNumbers = new PersistentMap<Uint8Array, VersionNumber[]>("versionNumbers");
 const versions = new PersistentMap<Uint8Array, VersionInfo>("versions");
-const modsByContextType = new PersistentMap<Uint8Array, u32[]>("modsByContextType");
-const moduleIdxs = new PersistentMap<Uint8Array, u32>("moduleIdxs");
+const modsByContextType = new PersistentMap<Uint8Array, i32[]>("modsByContextType");
+const moduleIdxs = new PersistentMap<Uint8Array, i32>("moduleIdxs");
 const modules = new PersistentVector<ModuleInfo>("modules");
 
 export function init(): void {
@@ -86,8 +86,8 @@ export function init(): void {
     modules.push(new ModuleInfo(0,"","","","",[], new StorageRef(new Uint8Array(0), []), 0));
   }
 
-export function getModuleInfoBatch(ctxIds: string[], users: string[], maxBufLen: u32): ModuleInfo[][] {
-    const mod_info = new Array<ModuleInfo[]>(ctxIds.length);
+export function getModuleInfoBatch(ctxIds: string[], users: string[], maxBufLen: i32): ModuleInfo[][] {
+    const mod_info = Array.create<ModuleInfo[]>(ctxIds.length);
     for (let i: i32 = 0; i < ctxIds.length; ++i) {
         const mi = getModuleInfo(ctxIds[i], users, maxBufLen);
         mod_info[i] = mi;
@@ -96,12 +96,12 @@ export function getModuleInfoBatch(ctxIds: string[], users: string[], maxBufLen:
 }
 
 //Very naive impl.
-export function getModuleInfo(ctxId: string, users: string[], maxBufLen: u32): ModuleInfo[] {
-    const outbuf = new Array<u32>(maxBufLen > 0 ? maxBufLen : 1000);
+export function getModuleInfo(ctxId: string, users: string[], maxBufLen: i32): ModuleInfo[] {
+    const outbuf = Array.create<i32>(maxBufLen > 0 ? maxBufLen : 1000);
     const bufLen = _fetchModulesByUsersTag(ctxId, users, outbuf, 0);
-    const mod_info = new Array<ModuleInfo>(bufLen);
+    const mod_info = Array.create<ModuleInfo>(bufLen);
     for (let i: i32 = 0; i < bufLen; ++i) {
-        const idx: u32 = outbuf[i];
+        const idx: i32 = outbuf[i];
         mod_info[i] = modules[idx]; // WARNING! indexes are started from 1.
         //ToDo: strip contentType indexes?
     }
@@ -117,12 +117,15 @@ export function getModuleInfoByName(mod_name: string): ModuleInfo {
 export function addModuleInfo(contextIds: string[], mInfo: ModuleInfo, vInfos: VersionInfoDto[], owner: string): void {
     assert(_isEnsOwner(owner));
     const mKey = math.keccak256(util.stringToBytes(mInfo.name));
-    moduleIdxs.getSome(mKey);
+    
+    assert(!moduleIdxs.contains(mKey), 'The module already exists'); // module does not exist        
 
     // ModuleInfo adding
     mInfo.owner = owner;
     modules.push(mInfo);
-    const mIdx: u32 = u32(modules.length - 1); // WARNING! indexes are started from 1.
+    const mIdx: i32 = modules.length - 1; // WARNING! indexes are started from 1.
+
+    logging.log("mIdx: " + mIdx.toString());
     moduleIdxs.set(mKey, mIdx);
 
     // ContextId adding
@@ -168,25 +171,26 @@ export function getVersionNumbers(name: string, branch: string): VersionNumber[]
 // instead of resolveToManifest
 export function getVersionInfo(name: string, branch: string, major: u8, minor: u8, patch: u8): VersionInfoDto {
     const key = math.keccak256(_concatUint8Arrays([util.stringToBytes(name), util.stringToBytes(branch), _u8ToUint8Array(major), _u8ToUint8Array(minor), _u8ToUint8Array(patch)]));
-    const v = versions.get(key);
-    assert(v !== null, "Version doesn't exist");
+    assert(versions.contains(key), "Version doesn't exist");
 
-    const deps = new Array<DependencyDto>(v!.dependencies.length);
-    for (let i: i32 = 0; i < v!.dependencies.length; ++i) {
-        const depVi = versions.get(v!.dependencies[i])!;
+    const v = versions.getSome(key);
+    
+    const deps = Array.create<DependencyDto>(v.dependencies.length);
+    for (let i: i32 = 0; i < v.dependencies.length; ++i) {
+        const depVi = versions.get(v.dependencies[i])!;
         const depMod: ModuleInfo = modules[depVi.modIdx];
         deps[i] = new DependencyDto(depMod.name, depVi.branch, depVi.major, depVi.minor, depVi.patch);
     }
 
-    const interfaces = new Array<DependencyDto>(v!.interfaces.length);
-    for (let i: i32 = 0; i < v!.interfaces.length; ++i) {
-        const intVi: VersionInfo = versions.get(v!.interfaces[i])!;
+    const interfaces = Array.create<DependencyDto>(v.interfaces.length);
+    for (let i: i32 = 0; i < v.interfaces.length; ++i) {
+        const intVi: VersionInfo = versions.get(v.interfaces[i])!;
         const intMod: ModuleInfo = modules[intVi.modIdx];
         interfaces[i] = new DependencyDto(intMod.name, intVi.branch, intVi.major, intVi.minor, intVi.patch);
     }
 
-    const moduleType = modules[v!.modIdx].moduleType;
-    const dto = new VersionInfoDto(moduleType, v!.branch, v!.major, v!.minor, v!.patch, v!.flags, v!.binary, deps, interfaces);
+    const moduleType = modules[v.modIdx].moduleType;
+    const dto = new VersionInfoDto(moduleType, v.branch, v.major, v.minor, v.patch, v.flags, v.binary, deps, interfaces);
 
     return dto;
 }
@@ -225,7 +229,7 @@ export function removeContextId(mod_name: string, contextId: string, owner: stri
 
     // ContextId adding
     const key = math.keccak256(_concatUint8Arrays([util.stringToBytes(contextId), util.stringToBytes(owner)]));
-    const mods: u32[] = modsByContextType.get(key, [])!;
+    const mods: i32[] = modsByContextType.get(key, [])!;
 
     for (let i: i32 = 0; i < mods.length; ++i) {
         if (mods[i] == moduleIdx) {
@@ -238,8 +242,8 @@ export function removeContextId(mod_name: string, contextId: string, owner: stri
     modsByContextType.set(key, mods);
 }
 
-function _fetchModulesByUsersTags(interfaces: string[], users: string[], outbuf: u32[], _bufLen: u32): u32 {
-    let bufLen: u32 = _bufLen;
+function _fetchModulesByUsersTags(interfaces: string[], users: string[], outbuf: i32[], _bufLen: i32): i32 {
+    let bufLen: i32 = _bufLen;
 
     for (let i: i32 = 0; i < interfaces.length; ++i) {
         bufLen = _fetchModulesByUsersTag(interfaces[i], users, outbuf, bufLen);
@@ -249,16 +253,16 @@ function _fetchModulesByUsersTags(interfaces: string[], users: string[], outbuf:
 }
 
 // ctxId - URL or ContextType [IdentityAdapter]
-function _fetchModulesByUsersTag(ctxId: string, users: string[], outbuf: u32[], _bufLen: u32): i32 {
+function _fetchModulesByUsersTag(ctxId: string, users: string[], outbuf: i32[], _bufLen: i32): i32 {
     let bufLen: i32 = _bufLen;
     for (let i: i32 = 0; i < users.length; ++i) {
         const key = math.keccak256(_concatUint8Arrays([util.stringToBytes(ctxId), util.stringToBytes(users[i])]));
-        const modIdxs: u32[] = modsByContextType.get(key, [])!;
+        const modIdxs: i32[] = modsByContextType.get(key, [])!;
         //add if no duplicates in buffer[0..nn-1]
-        const lastBufLen: u32 = bufLen;
+        const lastBufLen: i32 = bufLen;
         for (let j = 0; j < modIdxs.length; ++j) {
-            const modIdx: u32 = modIdxs[j];
-            let k: u32 = 0;
+            const modIdx: i32 = modIdxs[j];
+            let k: i32 = 0;
             for (; k < lastBufLen; ++k) {
                 if (outbuf[k] == modIdx) break; //duplicate found
             }
@@ -274,20 +278,20 @@ function _fetchModulesByUsersTag(ctxId: string, users: string[], outbuf: u32[], 
     return bufLen;
 }
 
-function _addModuleVersionNoChecking(moduleIdx: u32, mod_name: string, v: VersionInfoDto): void {
-    const deps = new Array<Uint8Array>(v.dependencies.length);
+function _addModuleVersionNoChecking(moduleIdx: i32, mod_name: string, v: VersionInfoDto): void {
+    const deps = Array.create<Uint8Array>(v.dependencies.length);
     for (let i: i32 = 0; i < v.dependencies.length; ++i) {
         const d: DependencyDto = v.dependencies[i];
         const dKey = math.keccak256(_concatUint8Arrays([util.stringToBytes(d.name), util.stringToBytes(d.branch), _u8ToUint8Array(d.major), _u8ToUint8Array(d.minor), _u8ToUint8Array(d.patch)]));
-        assert(versions.get(dKey) != null, "Dependency doesn't exist");
+        assert(versions.contains(dKey), "Dependency doesn't exist");
         deps[i] = dKey;
     }
 
-    const interfaces = new Array<Uint8Array>(v.interfaces.length);
+    const interfaces = Array.create<Uint8Array>(v.interfaces.length);
     for (let i: i32 = 0; i < v.interfaces.length; ++i) {
         const interf: DependencyDto = v.interfaces[i];
         const iKey = math.keccak256(_concatUint8Arrays([util.stringToBytes(interf.name), util.stringToBytes(interf.branch), _u8ToUint8Array(interf.major), _u8ToUint8Array(interf.minor), _u8ToUint8Array(interf.patch)]));
-        assert(versions.get(iKey) !== null, "Interface doesn't exist");
+        assert(versions.contains(iKey), "Interface doesn't exist");
         interfaces[i] = iKey;
 
         // add interface name to ModuleInfo if not exist

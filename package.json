@@ -12,6 +12,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@as-pect/cli": "^6.0.0",
     "asbuild": "0.0.11",
     "assemblyscript": "^0.18.20",
     "near-cli": "~1.6.0",
