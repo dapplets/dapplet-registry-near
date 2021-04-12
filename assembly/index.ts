@@ -1,24 +1,22 @@
-import { addModuleVersion, transferOwnership, getModules, getModuleVersion, getModuleNames, getModuleInfoByNames, getModuleBranches, createModule, getModuleInfoByName, getInterfacesOfModule } from './modules';
-import { addContextId, getAllContextIds, getAllListers, getAllModules, getContextIdsByModule, getModulesByContextId, removeContextId, bindingExists } from './listings';
+import * as modules from './modules';
+import * as listings from './listings';
 import { ModuleInfo, ModuleVersion } from './modules/models';
-import { Context } from 'near-sdk-core';
-
-export { addModuleVersion, transferOwnership, getModules, getModuleVersion, getModuleNames, getModuleInfoByNames, getModuleBranches, createModule, getModuleInfoByName };
-export { addContextId, getAllContextIds, getAllListers, getAllModules, getContextIdsByModule, getModulesByContextId, removeContextId };
+import { Context, logging } from 'near-sdk-core';
 
 export function addModuleWithContexts(contextIds: string[], mInfo: ModuleInfo, vInfo: ModuleVersion): void {
-    assert(getModuleVersion(mInfo.name, vInfo.branch, vInfo.version) == null, "The module version already exists.");
+    assert(mInfo.name == vInfo.name, "Module names must be equal.");
+    assert(modules.getModuleVersion(mInfo.name, vInfo.branch, vInfo.version) == null, "The module version already exists.");
 
     // register module name if not exists
-    if (getModuleInfoByName(mInfo.name) == null) createModule(mInfo);
+    if (modules.getModuleInfoByName(mInfo.name) == null) modules.createModule(mInfo);
 
     // add version
-    addModuleVersion(vInfo);
+    modules.addModuleVersion(vInfo);
 
     // add context ids
     for (let i: i32 = 0; i < contextIds.length; i++) {
-        if (!bindingExists(Context.sender, contextIds[i], mInfo.name)) {
-            addContextId(contextIds[i], mInfo.name);
+        if (!listings.bindingExists(Context.sender, contextIds[i], mInfo.name)) {
+            listings.addContextId(contextIds[i], mInfo.name);
         }
     }
 }
@@ -32,7 +30,6 @@ export function getModuleInfoBatch(ctxIds: string[], users: string[], maxBufLen:
     return mod_info;
 }
 
-
 //Very naive impl.
 export function getModuleInfo(ctxId: string, users: string[], maxBufLen: i32): ModuleInfo[] {
     const outbuf = new Array<string>(maxBufLen > 0 ? maxBufLen : 1000);
@@ -40,37 +37,36 @@ export function getModuleInfo(ctxId: string, users: string[], maxBufLen: i32): M
     const mod_info = new Array<ModuleInfo>(bufLen);
     for (let i: i32 = 0; i < bufLen; ++i) {
         const mod_name = outbuf[i];
-        mod_info[i] = getModuleInfoByName(mod_name)!; // WARNING! indexes are started from 1.
+        mod_info[i] = modules.getModuleInfoByName(mod_name)!; // WARNING! indexes are started from 1.
         //ToDo: strip contentType indexes?
     }
     return mod_info;
 }
 
+
 function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: string[], _bufLen: i32): i32 {
     let bufLen: i32 = _bufLen;
 
     for (let i: i32 = 0; i < listers.length; ++i) {
-        const modules = getModulesByContextId(listers[i], ctxId);
+        const _modules = listings.getModulesByContextId(listers[i], ctxId);
         //add if no duplicates in buffer[0..nn-1]
         const lastBufLen: i32 = bufLen;
-        for (let j = 0; j < modules.length; ++j) {
-            const moduleName = modules[j];
+        for (let j = 0; j < _modules.length; ++j) {
+            const moduleName = _modules[j];
             let k: i32 = 0;
             for (; k < lastBufLen; ++k) {
                 if (outbuf[k] == moduleName) break; //duplicate found
             }
             if (k == lastBufLen) { //no duplicates found  -- add the module's index
-                outbuf[bufLen++] = moduleName;
-                
-                const m = getModuleInfoByName(moduleName);
-                const interfaces = getInterfacesOfModule(moduleName);
-
+                const m = modules.getModuleInfoByName(moduleName);
                 if (m == null) continue;
-
+                
+                outbuf[bufLen++] = moduleName;
                 bufLen = _fetchModulesByUsersTag(m.name, listers, outbuf, bufLen); // using index as a tag.
                 
-                for (let i: i32 = 0; i < interfaces.length; ++i) {
-                    bufLen = _fetchModulesByUsersTag(interfaces[i], listers, outbuf, bufLen);
+                const interfaces = modules.getInterfacesOfModule(moduleName);
+                for (let l: i32 = 0; l < interfaces.length; ++l) {
+                    bufLen = _fetchModulesByUsersTag(interfaces[l], listers, outbuf, bufLen);
                 }
 
                 //ToDo: what if owner changes? CREATE MODULE ENS  NAMES! on creating ENS  
@@ -78,4 +74,80 @@ function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: strin
         }
     }
     return bufLen;
+}
+
+
+// ToDo: fix it when this issue will be implemented
+// https://github.com/near/near-sdk-as/issues/491
+export function getModuleInfoByNames(names: string[]): (ModuleInfo | null)[] {
+    return modules.getModuleInfoByNames(names);
+}
+
+export function getModuleInfoByName(name: string): ModuleInfo | null {
+    return modules.getModuleInfoByName(name);
+}
+
+export function getModuleVersion(name: string, branch: string, version: string): ModuleVersion | null {
+    return modules.getModuleVersion(name, branch, version);
+}
+
+export function getModuleNames(): string[] {
+    return modules.getModuleNames();
+}
+
+export function getModules(): ModuleInfo[] {
+    return modules.getModules();
+}
+
+export function getModuleBranches(name: string): string[] {
+    return modules.getModuleBranches(name);
+}
+
+export function getInterfacesOfModule(name: string): string[] {
+    return modules.getInterfacesOfModule(name);
+}
+
+export function createModule(moduleInfo: ModuleInfo): void {
+    modules.createModule(moduleInfo);
+}
+
+export function addModuleVersion(moduleVersion: ModuleVersion): void {
+    modules.addModuleVersion(moduleVersion);
+}
+
+export function transferOwnership(moduleName: string, newOwner: string): void {
+    modules.transferOwnership(moduleName, newOwner);
+}
+
+
+export function getAllContextIds(lister: string): string[] {
+    return listings.getAllContextIds(lister);
+}
+
+export function getAllModules(lister: string): string[] {
+    return listings.getAllModules(lister);
+}
+
+export function getModulesByContextId(lister: string, c: string): string[] {
+    return listings.getModulesByContextId(lister, c);
+}
+
+export function getContextIdsByModule(lister: string, m: string): string[] {
+    return listings.getContextIdsByModule(lister, m);
+}
+
+export function getAllListers(): string[] {
+    return listings.getAllListers();
+}
+
+export function bindingExists(lister: string, c: string, m: string): bool {
+    return listings.bindingExists(lister, c, m);
+}
+
+export function addContextId(c: string, m: string): void {
+    listings.addContextId(c, m);
+}
+
+export function removeContextId(c: string, m: string): void {
+    listings.removeContextId(c, m);
 }

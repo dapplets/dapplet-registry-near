@@ -65,6 +65,6 @@ export function removeContextId(c: string, m: string): void {
     const contextIds = getContextIdsList(lister);
     const modules = getModulesList(lister);
 
-    if (cAdjacencies.size === 0) contextIds.delete(c);
-    if (mAdjacencies.size === 0) modules.delete(m);
+    if (cAdjacencies.size == 0) contextIds.delete(c);
+    if (mAdjacencies.size == 0) modules.delete(m);
 }

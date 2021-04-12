@@ -12,6 +12,7 @@ export function getModuleInfoByNames(names: string[]): (ModuleInfo | null)[] {
 }
 
 export function getModuleInfoByName(name: string): ModuleInfo | null {
+  if (!moduleIdxByName.contains(name)) return null;
   const moduleIdx = moduleIdxByName.getSome(name);
   return modules.containsIndex(moduleIdx) ? modules[moduleIdx] : null;
 }
@@ -32,7 +33,7 @@ export function getModuleNames(): string[] {
 export function getModules(): ModuleInfo[] {
   const moduleInfos = new Array<ModuleInfo>(modules.length);
   for (let i: i32 = 0; i < moduleInfos.length; i++) {
-    moduleInfos[i] = moduleInfos[i];
+    moduleInfos[i] = modules[i];
   }
   return moduleInfos;
 }
@@ -52,7 +53,7 @@ export function getInterfacesOfModule(name: string): string[] {
 export function createModule(moduleInfo: ModuleInfo): void {
   assert(!moduleIdxByName.contains(moduleInfo.name), "The module with such name already exists.");
   assert(Context.sender == moduleInfo.owner, "The module's owner must be sender of transaction.");
-
+  
   const idx = modules.push(moduleInfo);
   moduleIdxByName.set(moduleInfo.name, idx);
 }
@@ -60,7 +61,7 @@ export function createModule(moduleInfo: ModuleInfo): void {
 export function addModuleVersion(moduleVersion: ModuleVersion): void {
   const idx = moduleIdxByName.getSome(moduleVersion.name);
   const module = modules[idx];
-  assert(module.owner === Context.sender, 'You are not the owner of this module');
+  assert(module.owner == Context.sender, 'You are not the owner of this module.');
 
   const versions = getVersionsMap(moduleVersion.name, moduleVersion.branch);
   assert(!versions.contains(moduleVersion.version), "The version already exists.");
@@ -74,7 +75,7 @@ export function addModuleVersion(moduleVersion: ModuleVersion): void {
     assert(depModule != null, "The dependency is not exist.");
     assert(depModule!.moduleType == 2 || depModule!.moduleType == 3, "The dependency is not an adapter or a library.");
     
-    const version = getModuleVersion(_dep.name, _dep.name, _dep.version);
+    const version = getModuleVersion(_dep.name, _dep.branch, _dep.version);
     assert(version != null, "The dependency version doesn't exist.");    
   }
 
@@ -87,11 +88,12 @@ export function addModuleVersion(moduleVersion: ModuleVersion): void {
     assert(interfaceModule != null, "The interface is not exist.");
     assert(interfaceModule!.moduleType == 4, "The module is not interface.");
     
-    const version = getModuleVersion(_interface.name, _interface.name, _interface.version);
+    const version = getModuleVersion(_interface.name, _interface.branch, _interface.version);
     assert(version != null, "The interface version doesn't exist.");    
     
     // Add interfaces
-    if (!interfacesList.has(_interface.name)) interfacesList.add(_interface.name); // ToDo: remove it, when contextIds will be binded to module versions.
+    // ToDo: remove it, when contextIds will be binded to module versions.
+    if (!interfacesList.has(_interface.name)) interfacesList.add(_interface.name);
   }
   
   // Add version
@@ -105,7 +107,7 @@ export function addModuleVersion(moduleVersion: ModuleVersion): void {
 export function transferOwnership(moduleName: string, newOwner: string): void {
   const idx = moduleIdxByName.getSome(moduleName);
   const module = modules[idx];
-  assert(module.owner === Context.sender, 'You are not the owner of this module');
+  assert(module.owner == Context.sender, 'You are not the owner of this module');
 
   module.owner = newOwner;
   modules.replace(idx, module);

@@ -19,7 +19,6 @@ export class ModuleVersion {
     public title: string,
     public description: string,
     public icon: StorageRef,
-    public owner: string,
     public reference: StorageRef,
     public docs: StorageRef,
 
