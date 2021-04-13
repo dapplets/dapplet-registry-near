@@ -11,60 +11,60 @@ export function getAllModules(lister: string): string[] {
     return getModulesList(lister).values();
 }
 
-export function getModulesByContextId(lister: string, c: string): string[] {
-    return getAdjacencyList(lister, c).values();
+export function getModulesByContextId(lister: string, contextId: string): string[] {
+    return getAdjacencyList(lister, contextId).values();
 }
 
-export function getContextIdsByModule(lister: string, m: string): string[] {
-    return getAdjacencyList(lister, m).values();
+export function getContextIdsByModule(lister: string, moduleName: string): string[] {
+    return getAdjacencyList(lister, moduleName).values();
 }
 
 export function getAllListers(): string[] {
     return listers.values();
 }
 
-export function bindingExists(lister: string, c: string, m: string): bool {
-    const cAdjacencies = getAdjacencyList(lister, c);
-    const mAdjacencies = getAdjacencyList(lister, m);
-    return cAdjacencies.has(m) && mAdjacencies.has(c);
+export function bindingExists(lister: string, contextId: string, moduleName: string): bool {
+    const cAdjacencies = getAdjacencyList(lister, contextId);
+    const mAdjacencies = getAdjacencyList(lister, moduleName);
+    return cAdjacencies.has(moduleName) && mAdjacencies.has(contextId);
 }
 
 // WRITE
 
-export function addContextId(c: string, m: string): void {
+export function addContextId(contextId: string, moduleName: string): void {
     const lister = Context.sender;
 
-    const cAdjacencies = getAdjacencyList(lister, c);
-    const mAdjacencies = getAdjacencyList(lister, m);
+    const cAdjacencies = getAdjacencyList(lister, contextId);
+    const mAdjacencies = getAdjacencyList(lister, moduleName);
 
-    assert(!cAdjacencies.has(m) && !mAdjacencies.has(c), "Binding already exists.");
+    assert(!cAdjacencies.has(moduleName) && !mAdjacencies.has(contextId), "Binding already exists.");
 
-    cAdjacencies.add(m);
-    mAdjacencies.add(c);
+    cAdjacencies.add(moduleName);
+    mAdjacencies.add(contextId);
 
     const contextIds = getContextIdsList(lister);
     const modules = getModulesList(lister);
 
-    if (!contextIds.has(c)) contextIds.add(c);
-    if (!modules.has(m)) modules.add(m);
+    if (!contextIds.has(contextId)) contextIds.add(contextId);
+    if (!modules.has(moduleName)) modules.add(moduleName);
 
     if (!listers.has(lister)) listers.add(lister);
 }
 
-export function removeContextId(c: string, m: string): void {
+export function removeContextId(contextId: string, moduleName: string): void {
     const lister = Context.sender;
 
-    const cAdjacencies = getAdjacencyList(lister, c);
-    const mAdjacencies = getAdjacencyList(lister, m);
+    const cAdjacencies = getAdjacencyList(lister, contextId);
+    const mAdjacencies = getAdjacencyList(lister, moduleName);
 
-    assert(cAdjacencies.has(m) && mAdjacencies.has(c), "Binding doesn't exist.");
+    assert(cAdjacencies.has(moduleName) && mAdjacencies.has(contextId), "Binding doesn't exist.");
 
-    cAdjacencies.delete(m);
-    mAdjacencies.delete(c);
+    cAdjacencies.delete(moduleName);
+    mAdjacencies.delete(contextId);
     
     const contextIds = getContextIdsList(lister);
     const modules = getModulesList(lister);
 
-    if (cAdjacencies.size == 0) contextIds.delete(c);
-    if (mAdjacencies.size == 0) modules.delete(m);
+    if (cAdjacencies.size == 0) contextIds.delete(contextId);
+    if (mAdjacencies.size == 0) modules.delete(moduleName);
 }

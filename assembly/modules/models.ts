@@ -10,12 +10,14 @@ export class ModuleInfo {
 }
 
 @nearBindgen
-export class ModuleVersion {
+export class VersionInfo {
   constructor(
     public name: string,
     public branch: string,
     public version: string,
 
+    public owner: string,
+    public moduleType: u8, // 1 - Feature, 2 - Adapter, 3 - Library, 4 - Interface
     public title: string,
     public description: string,
     public icon: StorageRef,
@@ -47,8 +49,8 @@ export class Dependency {
 export const modules = new PersistentVector<ModuleInfo>("r_modules");
 export const moduleIdxByName = new PersistentMap<string, i32>("r_moduleIdxByName");
 
-export function getVersionsMap(moduleName: string, branch: string): PersistentUnorderedMap<string, ModuleVersion> {
-  return new PersistentUnorderedMap<string, ModuleVersion>("r_v:" + moduleName + ":" + branch);
+export function getVersionsMap(moduleName: string, branch: string): PersistentUnorderedMap<string, VersionInfo> {
+  return new PersistentUnorderedMap<string, VersionInfo>("r_v:" + moduleName + ":" + branch);
 }
 
 export function getBranchesList(moduleName: string): PersistentSet<string> {

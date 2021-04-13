@@ -1,11 +1,11 @@
 import * as modules from './modules';
 import * as listings from './listings';
-import { ModuleInfo, ModuleVersion } from './modules/models';
-import { Context, logging } from 'near-sdk-core';
+import { ModuleInfo, VersionInfo } from './modules/models';
+import { Context } from 'near-sdk-core';
 
-export function addModuleWithContexts(contextIds: string[], mInfo: ModuleInfo, vInfo: ModuleVersion): void {
+export function addModuleWithContexts(contextIds: string[], mInfo: ModuleInfo, vInfo: VersionInfo): void {
     assert(mInfo.name == vInfo.name, "Module names must be equal.");
-    assert(modules.getModuleVersion(mInfo.name, vInfo.branch, vInfo.version) == null, "The module version already exists.");
+    assert(modules.getVersionInfo(mInfo.name, vInfo.branch, vInfo.version) == null, "The module version already exists.");
 
     // register module name if not exists
     if (modules.getModuleInfoByName(mInfo.name) == null) modules.createModule(mInfo);
@@ -60,10 +60,10 @@ function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: strin
             if (k == lastBufLen) { //no duplicates found  -- add the module's index
                 const m = modules.getModuleInfoByName(moduleName);
                 if (m == null) continue;
-                
+
                 outbuf[bufLen++] = moduleName;
                 bufLen = _fetchModulesByUsersTag(m.name, listers, outbuf, bufLen); // using index as a tag.
-                
+
                 const interfaces = modules.getInterfacesOfModule(moduleName);
                 for (let l: i32 = 0; l < interfaces.length; ++l) {
                     bufLen = _fetchModulesByUsersTag(interfaces[l], listers, outbuf, bufLen);
@@ -87,8 +87,12 @@ export function getModuleInfoByName(name: string): ModuleInfo | null {
     return modules.getModuleInfoByName(name);
 }
 
-export function getModuleVersion(name: string, branch: string, version: string): ModuleVersion | null {
-    return modules.getModuleVersion(name, branch, version);
+export function getLastVersionInfo(name: string): VersionInfo | null {
+    return modules.getLastVersionInfo(name);
+}
+
+export function getVersionInfo(name: string, branch: string, version: string): VersionInfo | null {
+    return modules.getVersionInfo(name, branch, version);
 }
 
 export function getModuleNames(): string[] {
@@ -103,6 +107,10 @@ export function getModuleBranches(name: string): string[] {
     return modules.getModuleBranches(name);
 }
 
+export function getVersionNumbers(name: string, branch: string): string[] {
+    return modules.getVersionNumbers(name, branch);
+}
+
 export function getInterfacesOfModule(name: string): string[] {
     return modules.getInterfacesOfModule(name);
 }
@@ -111,14 +119,13 @@ export function createModule(moduleInfo: ModuleInfo): void {
     modules.createModule(moduleInfo);
 }
 
-export function addModuleVersion(moduleVersion: ModuleVersion): void {
+export function addModuleVersion(moduleVersion: VersionInfo): void {
     modules.addModuleVersion(moduleVersion);
 }
 
 export function transferOwnership(moduleName: string, newOwner: string): void {
     modules.transferOwnership(moduleName, newOwner);
 }
-
 
 export function getAllContextIds(lister: string): string[] {
     return listings.getAllContextIds(lister);
@@ -128,26 +135,26 @@ export function getAllModules(lister: string): string[] {
     return listings.getAllModules(lister);
 }
 
-export function getModulesByContextId(lister: string, c: string): string[] {
-    return listings.getModulesByContextId(lister, c);
+export function getModulesByContextId(lister: string, contextId: string): string[] {
+    return listings.getModulesByContextId(lister, contextId);
 }
 
-export function getContextIdsByModule(lister: string, m: string): string[] {
-    return listings.getContextIdsByModule(lister, m);
+export function getContextIdsByModule(lister: string, moduleName: string): string[] {
+    return listings.getContextIdsByModule(lister, moduleName);
 }
 
 export function getAllListers(): string[] {
     return listings.getAllListers();
 }
 
-export function bindingExists(lister: string, c: string, m: string): bool {
-    return listings.bindingExists(lister, c, m);
+export function bindingExists(lister: string, contextId: string, moduleName: string): bool {
+    return listings.bindingExists(lister, contextId, moduleName);
 }
 
-export function addContextId(c: string, m: string): void {
-    listings.addContextId(c, m);
+export function addContextId(contextId: string, moduleName: string): void {
+    listings.addContextId(contextId, moduleName);
 }
 
-export function removeContextId(c: string, m: string): void {
-    listings.removeContextId(c, m);
+export function removeContextId(contextId: string, moduleName: string): void {
+    listings.removeContextId(contextId, moduleName);
 }

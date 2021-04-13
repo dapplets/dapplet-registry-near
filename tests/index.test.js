@@ -5,15 +5,15 @@ let contract;
 let accountId;
 
 const EMPTY_REF = {
-  hash: 'AA==',
-  uris: ['AA==']
+  hash: '',
+  uris: []
 };
 
 beforeAll(async function () {
   near = await nearlib.connect(nearConfig);
   accountId = nearConfig.contractName;
   contract = await near.loadContract(nearConfig.contractName, {
-    viewMethods: ['getModules', 'getModuleVersion', 'getModuleNames', 'getModuleInfoByNames', 'getModuleBranches', 'getModuleInfoByName', 'getAllContextIds', 'getAllListers', 'getAllModules', 'getContextIdsByModule', 'getModulesByContextId', 'getModuleInfoBatch', 'getModuleInfo', 'getInterfacesOfModule'],
+    viewMethods: ['getLastVersionInfo', 'getModules', 'getVersionInfo', 'getModuleNames', 'getModuleAndVersionInfo', 'getModuleInfoByNames', 'getModuleBranches', 'getModuleInfoByName', 'getAllContextIds', 'getAllListers', 'getAllModules', 'getContextIdsByModule', 'getModulesByContextId', 'getModuleInfoBatch', 'getModuleInfo', 'getInterfacesOfModule', 'getVersionNumbers'],
     changeMethods: ['addModuleVersion', 'transferOwnership', 'createModule', 'addContextId', 'addModuleWithContexts', 'removeContextId'],
     sender: accountId
   });
@@ -109,6 +109,8 @@ it('adds new version of dynamic-adapter', async () => {
     name: 'dynamic-adapter',
     branch: 'default',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 2,
     title: 'Dynamic Adapter',
     description: 'This is a dynamic adapter',
     icon: null,
@@ -118,7 +120,7 @@ it('adds new version of dynamic-adapter', async () => {
     interfaces: []
   };
   await contract.addModuleVersion({ moduleVersion: v_a });
-  const v_b = await contract.getModuleVersion({
+  const v_b = await contract.getVersionInfo({
     name: 'dynamic-adapter',
     branch: 'default',
     version: '1.0.0'
@@ -131,6 +133,8 @@ it('adds new version of identity-adapter', async () => {
     name: 'identity-adapter',
     branch: 'default',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 4,
     title: 'identity Adapter',
     description: 'This is a identity adapter',
     icon: null,
@@ -140,7 +144,7 @@ it('adds new version of identity-adapter', async () => {
     interfaces: []
   };
   await contract.addModuleVersion({ moduleVersion: v_a });
-  const v_b = await contract.getModuleVersion({
+  const v_b = await contract.getVersionInfo({
     name: 'identity-adapter',
     branch: 'default',
     version: '1.0.0'
@@ -153,6 +157,8 @@ it('adds new version of twitter-adapter', async () => {
     name: 'twitter-adapter',
     branch: 'default',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 2,
     title: 'twitter Adapter',
     description: 'This is a twitter adapter',
     icon: null,
@@ -162,7 +168,7 @@ it('adds new version of twitter-adapter', async () => {
     interfaces: [{ name: 'identity-adapter', branch: 'default', version: '1.0.0' }]
   };
   await contract.addModuleVersion({ moduleVersion: v_a });
-  const v_b = await contract.getModuleVersion({
+  const v_b = await contract.getVersionInfo({
     name: 'twitter-adapter',
     branch: 'default',
     version: '1.0.0'
@@ -175,6 +181,8 @@ it('adds new version of twitter-adapter#new', async () => {
     name: 'twitter-adapter',
     branch: 'new',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 2,
     title: 'twitter Adapter',
     description: 'This is a twitter adapter',
     icon: null,
@@ -184,7 +192,7 @@ it('adds new version of twitter-adapter#new', async () => {
     interfaces: [{ name: 'identity-adapter', branch: 'default', version: '1.0.0' }]
   };
   await contract.addModuleVersion({ moduleVersion: v_a });
-  const v_b = await contract.getModuleVersion({
+  const v_b = await contract.getVersionInfo({
     name: 'twitter-adapter',
     branch: 'new',
     version: '1.0.0'
@@ -197,6 +205,8 @@ it('adds new version of twitter-adapter#legacy', async () => {
     name: 'twitter-adapter',
     branch: 'legacy',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 2,
     title: 'twitter Adapter',
     description: 'This is a twitter adapter',
     icon: null,
@@ -206,7 +216,7 @@ it('adds new version of twitter-adapter#legacy', async () => {
     interfaces: [{ name: 'identity-adapter', branch: 'default', version: '1.0.0' }]
   };
   await contract.addModuleVersion({ moduleVersion: v_a });
-  const v_b = await contract.getModuleVersion({
+  const v_b = await contract.getVersionInfo({
     name: 'twitter-adapter',
     branch: 'legacy',
     version: '1.0.0'
@@ -219,6 +229,8 @@ it('adds new version of instagram-adapter', async () => {
     name: 'instagram-adapter',
     branch: 'default',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 2,
     title: 'instagram Adapter',
     description: 'This is a instagram adapter',
     icon: null,
@@ -228,7 +240,7 @@ it('adds new version of instagram-adapter', async () => {
     interfaces: [{ name: 'identity-adapter', branch: 'default', version: '1.0.0' }]
   };
   await contract.addModuleVersion({ moduleVersion: v_a });
-  const v_b = await contract.getModuleVersion({
+  const v_b = await contract.getVersionInfo({
     name: 'instagram-adapter',
     branch: 'default',
     version: '1.0.0'
@@ -241,6 +253,8 @@ it('adds new version of identity-feature', async () => {
     name: 'identity-feature',
     branch: 'default',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 1,
     title: 'Identity Feature',
     description: 'This is a identity feature',
     icon: EMPTY_REF,
@@ -250,7 +264,7 @@ it('adds new version of identity-feature', async () => {
     interfaces: [{ name: 'identity-adapter', branch: 'default', version: '1.0.0' }]
   };
   await contract.addModuleVersion({ moduleVersion: v_a });
-  const v_b = await contract.getModuleVersion({
+  const v_b = await contract.getVersionInfo({
     name: 'identity-feature',
     branch: 'default',
     version: '1.0.0'
@@ -284,6 +298,8 @@ it('returns version info by [name, branch, version]', async () => {
     name: 'identity-feature',
     branch: 'default',
     version: '1.0.0',
+    owner: accountId,
+    moduleType: 1,
     title: 'Identity Feature',
     description: 'This is a identity feature',
     icon: EMPTY_REF,
@@ -292,12 +308,12 @@ it('returns version info by [name, branch, version]', async () => {
     dependencies: [],
     interfaces: [{ name: 'identity-adapter', branch: 'default', version: '1.0.0' }]
   };
-  const v_b = await contract.getModuleVersion({ name: 'identity-feature', branch: 'default', version: '1.0.0' });
+  const v_b = await contract.getVersionInfo({ name: 'identity-feature', branch: 'default', version: '1.0.0' });
   expect(v_a).toMatchObject(v_b);
 });
 
 it('returns null by non-existing [name, branch, version]', async () => {
-  const result = await contract.getModuleVersion({ name: 'non-existing', branch: 'default', version: '1.0.0' });
+  const result = await contract.getVersionInfo({ name: 'non-existing', branch: 'default', version: '1.0.0' });
   expect(result).toBeNull();
 });
 
@@ -334,6 +350,8 @@ it('creates twitter-adapter via facade', async () => {
     name: 'twitter-adapter',
     branch: 'default',
     version: '1.0.1',
+    owner: accountId,
+    moduleType: 2,
     title: 'twitter Adapter',
     description: 'This is a twitter adapter',
     icon: null,
@@ -362,6 +380,8 @@ it('creates instagram-adapter via facade', async () => {
     name: 'instagram-adapter',
     branch: 'default',
     version: '1.0.1',
+    owner: accountId,
+    moduleType: 2,
     title: 'instagram Adapter',
     description: 'This is a instagram adapter',
     icon: null,
@@ -391,6 +411,8 @@ it('creates identity-feature via facade', async () => {
     name: 'identity-feature',
     branch: 'default',
     version: '1.0.1',
+    owner: accountId,
+    moduleType: 1,
     title: 'identity-feature',
     description: 'This is a identity-feature',
     icon: null,
@@ -431,7 +453,7 @@ it('returns modules by context ids and users', async () => {
   });
 
   const names = result.map(x => x.map(y => y.name));
-  
+
   expect(names).toMatchObject([
     [
       'twitter-adapter',
@@ -444,4 +466,14 @@ it('returns modules by context ids and users', async () => {
       'identity-adapter'
     ]
   ]);
+});
+
+it('returns versions of a module', async () => {
+  const versions = await contract.getVersionNumbers({ name: 'identity-feature', branch: 'default' });
+  expect(versions).toMatchObject(['1.0.0', '1.0.1']);
+});
+
+it('returns last version info', async () => {
+  const data = await contract.getLastVersionInfo({ name: 'identity-feature' });
+  expect(data.version).toBe('1.0.1');
 });
