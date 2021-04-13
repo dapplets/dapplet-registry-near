@@ -3,22 +3,21 @@ import * as listings from './listings';
 import { ModuleInfo, VersionInfo } from './modules/models';
 import { Context } from 'near-sdk-core';
 
-export function addModuleWithContexts(contextIds: string[], mInfo: ModuleInfo, vInfo: VersionInfo): void {
-    assert(mInfo.name == vInfo.name, "Module names must be equal.");
-    assert(modules.getVersionInfo(mInfo.name, vInfo.branch, vInfo.version) == null, "The module version already exists.");
+// READ
 
-    // register module name if not exists
-    if (modules.getModuleInfoByName(mInfo.name) == null) modules.createModule(mInfo);
+export function getLastVersionsByContextIds(ctxIds: string[], users: string[], maxBufLen: i32): VersionInfo[][] {
+    const mInfos = getModuleInfoBatch(ctxIds, users, maxBufLen);
+    const vInfos = new Array<VersionInfo[]>(mInfos.length);
 
-    // add version
-    modules.addModuleVersion(vInfo);
-
-    // add context ids
-    for (let i: i32 = 0; i < contextIds.length; i++) {
-        if (!listings.bindingExists(Context.sender, contextIds[i], mInfo.name)) {
-            listings.addContextId(contextIds[i], mInfo.name);
-        }
+    for (let i: i32 = 0; i < mInfos.length; ++i) {
+        vInfos[i] = new Array<VersionInfo>();
+        for (let j: i32 = 0; j < mInfos[i].length; ++j) {
+            const vi = getLastVersionInfo(mInfos[i][j].name);
+            if (vi != null) vInfos[i].push(vi);
+        }        
     }
+
+    return vInfos;
 }
 
 export function getModuleInfoBatch(ctxIds: string[], users: string[], maxBufLen: i32): ModuleInfo[][] {
@@ -43,6 +42,25 @@ export function getModuleInfo(ctxId: string, users: string[], maxBufLen: i32): M
     return mod_info;
 }
 
+// WRITE
+
+export function addModuleWithContexts(contextIds: string[], mInfo: ModuleInfo, vInfo: VersionInfo): void {
+    assert(mInfo.name == vInfo.name, "Module names must be equal.");
+    assert(modules.getVersionInfo(mInfo.name, vInfo.branch, vInfo.version) == null, "The module version already exists.");
+
+    // register module name if not exists
+    if (modules.getModuleInfoByName(mInfo.name) == null) modules.createModule(mInfo);
+
+    // add version
+    modules.addModuleVersion(vInfo);
+
+    // add context ids
+    for (let i: i32 = 0; i < contextIds.length; i++) {
+        if (!listings.bindingExists(Context.sender, contextIds[i], mInfo.name)) {
+            listings.addContextId(contextIds[i], mInfo.name);
+        }
+    }
+}
 
 function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: string[], _bufLen: i32): i32 {
     let bufLen: i32 = _bufLen;
@@ -75,7 +93,6 @@ function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: strin
     }
     return bufLen;
 }
-
 
 // ToDo: fix it when this issue will be implemented
 // https://github.com/near/near-sdk-as/issues/491

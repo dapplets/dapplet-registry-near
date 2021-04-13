@@ -13,7 +13,7 @@ beforeAll(async function () {
   near = await nearlib.connect(nearConfig);
   accountId = nearConfig.contractName;
   contract = await near.loadContract(nearConfig.contractName, {
-    viewMethods: ['getLastVersionInfo', 'getModules', 'getVersionInfo', 'getModuleNames', 'getModuleAndVersionInfo', 'getModuleInfoByNames', 'getModuleBranches', 'getModuleInfoByName', 'getAllContextIds', 'getAllListers', 'getAllModules', 'getContextIdsByModule', 'getModulesByContextId', 'getModuleInfoBatch', 'getModuleInfo', 'getInterfacesOfModule', 'getVersionNumbers'],
+    viewMethods: ['getLastVersionsByContextIds', 'getLastVersionInfo', 'getModules', 'getVersionInfo', 'getModuleNames', 'getModuleAndVersionInfo', 'getModuleInfoByNames', 'getModuleBranches', 'getModuleInfoByName', 'getAllContextIds', 'getAllListers', 'getAllModules', 'getContextIdsByModule', 'getModulesByContextId', 'getModuleInfoBatch', 'getModuleInfo', 'getInterfacesOfModule', 'getVersionNumbers'],
     changeMethods: ['addModuleVersion', 'transferOwnership', 'createModule', 'addContextId', 'addModuleWithContexts', 'removeContextId'],
     sender: accountId
   });
@@ -464,6 +464,29 @@ it('returns modules by context ids and users', async () => {
       'instagram-adapter',
       'identity-feature',
       'identity-adapter'
+    ]
+  ]);
+});
+
+it('returns last version info by context ids', async () => {
+  const data = await contract.getLastVersionsByContextIds({
+    ctxIds: ['twitter.com', 'instagram.com'],
+    users: [accountId],
+    maxBufLen: 0
+  });
+
+  const names = data.map(x => x.map(y => ({ name: y.name, version: y.version })));
+
+  expect(names).toMatchObject([
+    [
+      { name: 'twitter-adapter', version: '1.0.1' },
+      { name: 'identity-feature', version: '1.0.1' },
+      { name: 'identity-adapter', version: '1.0.0' }
+    ],
+    [
+      { name: 'instagram-adapter', version: '1.0.1' },
+      { name: 'identity-feature', version: '1.0.1' },
+      { name: 'identity-adapter', version: '1.0.0' }
     ]
   ]);
 });
