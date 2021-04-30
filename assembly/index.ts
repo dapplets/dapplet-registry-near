@@ -1,26 +1,55 @@
 import * as modules from './modules';
 import * as listings from './listings';
 import { ModuleInfo, VersionInfo } from './modules/models';
-import { Context } from 'near-sdk-core';
+import { Context, logging, util } from 'near-sdk-core';
 
 // READ
 
 export function getLastVersionsByContextIds(ctxIds: string[], users: string[], maxBufLen: i32): VersionInfo[][] {
+    // const mInfos = getModuleInfoBatch(ctxIds, users, maxBufLen);
+    // const vInfos = new Array<VersionInfo[]>(mInfos.length);
+
+    // for (let i: i32 = 0; i < mInfos.length; ++i) {
+    //     vInfos[i] = new Array<VersionInfo>();
+    //     for (let j: i32 = 0; j < mInfos[i].length; ++j) {
+    //         const vi = getLastVersionInfo(mInfos[i][j].name);
+    //         if (vi != null) vInfos[i].push(vi);
+    //     }        
+    // }
+
+    // return vInfos;
+
+    logging.log("prepaidGas:" + Context.prepaidGas.toString());
+
     const vInfos = new Array<VersionInfo[]>(ctxIds.length);
     for (let i: i32 = 0; i < ctxIds.length; ++i) {
+        logging.log("start iteration: " + i.toString());
         const outbuf = new Array<string>(maxBufLen > 0 ? maxBufLen : 1000);
         const bufLen = _fetchModulesByUsersTag(ctxIds[i], users, outbuf, 0);
+
+        logging.log("ctxID:" + ctxIds[i] + ', bufLen:' + bufLen.toString());
 
         vInfos[i] = new Array<VersionInfo>();
 
         for (let j: i32 = 0; j < bufLen; ++j) {
+            logging.log("getLastVersion:" + outbuf[j]);
             const vi = getLastVersionInfo(outbuf[j]);
+            logging.log("got");
             if (vi != null) {
                 vInfos[i].push(vi);
+
             }
+            logging.log("inserted");
+            logging.log("usedGas:" + Context.usedGas.toString());
             
         }
+
+        logging.log("end iteration: " + i.toString());
     }
+
+    logging.log("usedGas:" + Context.usedGas.toString());
+
+    logging.log("end");
 
     return vInfos;
 }
@@ -72,6 +101,7 @@ function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: strin
 
     for (let i: i32 = 0; i < listers.length; ++i) {
         const _modules = listings.getModulesByContextId(listers[i], ctxId);
+        logging.log(ctxId + '/' + listers[i] + ":" + _modules.join(','));
         //add if no duplicates in buffer[0..nn-1]
         const lastBufLen: i32 = bufLen;
         for (let j = 0; j < _modules.length; ++j) {
@@ -82,7 +112,9 @@ function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: strin
             }
             if (k == lastBufLen) { //no duplicates found  -- add the module's index
                 const m = modules.getModuleInfoByName(moduleName);
+                logging.log("usedGas:" + Context.usedGas.toString());
                 if (m == null) {
+                    logging.log(moduleName);
                     continue;
                 }
 
@@ -95,10 +127,12 @@ function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: strin
                 const interfaces = modules.getInterfacesOfModule(moduleName);
                 for (let l: i32 = 0; l < interfaces.length; ++l) {
                     bufLen = _fetchModulesByUsersTag(interfaces[l], listers, outbuf, bufLen);
+                    logging.log("usedGas:" + Context.usedGas.toString());
                 }
                 
                 //ToDo: what if owner changes? CREATE MODULE ENS  NAMES! on creating ENS  
             }
+            logging.log("usedGas:" + Context.usedGas.toString());
         }
     }
     return bufLen;
