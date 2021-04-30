@@ -1,5 +1,5 @@
 import { Context } from 'near-sdk-core';
-import { listers, getModulesList, getAdjacencyList, getContextIdsList } from './models';
+import { listers, getModulesList, getModulesByContextIdList, getContextIdsByModuleList, getContextIdsList } from './models';
 
 // READ
 
@@ -12,11 +12,11 @@ export function getAllModules(lister: string): string[] {
 }
 
 export function getModulesByContextId(lister: string, contextId: string): string[] {
-    return getAdjacencyList(lister, contextId).values();
+    return getModulesByContextIdList(lister, contextId).values();
 }
 
 export function getContextIdsByModule(lister: string, moduleName: string): string[] {
-    return getAdjacencyList(lister, moduleName).values();
+    return getContextIdsByModuleList(lister, moduleName).values();
 }
 
 export function getAllListers(): string[] {
@@ -24,8 +24,8 @@ export function getAllListers(): string[] {
 }
 
 export function bindingExists(lister: string, contextId: string, moduleName: string): bool {
-    const cAdjacencies = getAdjacencyList(lister, contextId);
-    const mAdjacencies = getAdjacencyList(lister, moduleName);
+    const cAdjacencies = getModulesByContextIdList(lister, contextId);
+    const mAdjacencies = getContextIdsByModuleList(lister, moduleName);
     return cAdjacencies.has(moduleName) && mAdjacencies.has(contextId);
 }
 
@@ -34,8 +34,8 @@ export function bindingExists(lister: string, contextId: string, moduleName: str
 export function addContextId(contextId: string, moduleName: string): void {
     const lister = Context.sender;
 
-    const cAdjacencies = getAdjacencyList(lister, contextId);
-    const mAdjacencies = getAdjacencyList(lister, moduleName);
+    const cAdjacencies = getModulesByContextIdList(lister, contextId);
+    const mAdjacencies = getContextIdsByModuleList(lister, moduleName);
 
     assert(!cAdjacencies.has(moduleName) && !mAdjacencies.has(contextId), "Binding already exists.");
 
@@ -54,8 +54,8 @@ export function addContextId(contextId: string, moduleName: string): void {
 export function removeContextId(contextId: string, moduleName: string): void {
     const lister = Context.sender;
 
-    const cAdjacencies = getAdjacencyList(lister, contextId);
-    const mAdjacencies = getAdjacencyList(lister, moduleName);
+    const cAdjacencies = getModulesByContextIdList(lister, contextId);
+    const mAdjacencies = getContextIdsByModuleList(lister, moduleName);
 
     assert(cAdjacencies.has(moduleName) && mAdjacencies.has(contextId), "Binding doesn't exist.");
 

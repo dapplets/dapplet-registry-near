@@ -46,18 +46,18 @@ export class Dependency {
   ) { }
 }
 
-export const modules = new PersistentVector<ModuleInfo>("r_modules");
-export const moduleIdxByName = new PersistentMap<string, i32>("r_moduleIdxByName");
+export const modules = new PersistentVector<ModuleInfo>("aa");
+export const moduleIdxByName = new PersistentMap<string, i32>("ab");
 
 export function getVersionsMap(moduleName: string, branch: string): PersistentUnorderedMap<string, VersionInfo> {
-  return new PersistentUnorderedMap<string, VersionInfo>("r_v:" + moduleName + ":" + branch);
+  return new PersistentUnorderedMap<string, VersionInfo>("ac:" + moduleName + ":" + branch);
 }
 
 export function getBranchesList(moduleName: string): PersistentSet<string> {
-  return new PersistentSet<string>("r_b:" + moduleName);
+  return new PersistentSet<string>("ad:" + moduleName);
 }
 
 // ToDo: remove it, when contextIds will be binded to module versions.
 export function getInterfacesList(moduleName: string): PersistentSet<string> {
-  return new PersistentSet<string>("r_i:" + moduleName);
+  return new PersistentSet<string>("ae:" + moduleName);
 }

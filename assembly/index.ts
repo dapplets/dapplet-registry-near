@@ -6,15 +6,20 @@ import { Context } from 'near-sdk-core';
 // READ
 
 export function getLastVersionsByContextIds(ctxIds: string[], users: string[], maxBufLen: i32): VersionInfo[][] {
-    const mInfos = getModuleInfoBatch(ctxIds, users, maxBufLen);
-    const vInfos = new Array<VersionInfo[]>(mInfos.length);
+    const vInfos = new Array<VersionInfo[]>(ctxIds.length);
+    for (let i: i32 = 0; i < ctxIds.length; ++i) {
+        const outbuf = new Array<string>(maxBufLen > 0 ? maxBufLen : 1000);
+        const bufLen = _fetchModulesByUsersTag(ctxIds[i], users, outbuf, 0);
 
-    for (let i: i32 = 0; i < mInfos.length; ++i) {
         vInfos[i] = new Array<VersionInfo>();
-        for (let j: i32 = 0; j < mInfos[i].length; ++j) {
-            const vi = getLastVersionInfo(mInfos[i][j].name);
-            if (vi != null) vInfos[i].push(vi);
-        }        
+
+        for (let j: i32 = 0; j < bufLen; ++j) {
+            const vi = getLastVersionInfo(outbuf[j]);
+            if (vi != null) {
+                vInfos[i].push(vi);
+            }
+            
+        }
     }
 
     return vInfos;
@@ -77,16 +82,21 @@ function _fetchModulesByUsersTag(ctxId: string, listers: string[], outbuf: strin
             }
             if (k == lastBufLen) { //no duplicates found  -- add the module's index
                 const m = modules.getModuleInfoByName(moduleName);
-                if (m == null) continue;
+                if (m == null) {
+                    continue;
+                }
 
                 outbuf[bufLen++] = moduleName;
+
+                if (m.moduleType === 1) continue;
+
                 bufLen = _fetchModulesByUsersTag(m.name, listers, outbuf, bufLen); // using index as a tag.
 
                 const interfaces = modules.getInterfacesOfModule(moduleName);
                 for (let l: i32 = 0; l < interfaces.length; ++l) {
                     bufLen = _fetchModulesByUsersTag(interfaces[l], listers, outbuf, bufLen);
                 }
-
+                
                 //ToDo: what if owner changes? CREATE MODULE ENS  NAMES! on creating ENS  
             }
         }

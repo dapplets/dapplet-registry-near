@@ -90,7 +90,7 @@ export function addModuleVersion(moduleVersion: VersionInfo): void {
     const _dep = moduleVersion.dependencies[i];
     const depModule = getModuleInfoByName(_dep.name);
     assert(depModule != null, "The dependency is not exist.");
-    assert(depModule!.moduleType == 2 || depModule!.moduleType == 3, "The dependency is not an adapter or a library.");
+    assert(depModule!.moduleType == 2 || depModule!.moduleType == 3 || depModule!.moduleType == 4, "Allowed types of dependencies: LIBRARY, ADAPTER, INTERFACE.");
 
     const version = getVersionInfo(_dep.name, _dep.branch, _dep.version);
     assert(version != null, "The dependency version doesn't exist.");

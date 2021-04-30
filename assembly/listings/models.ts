@@ -1,15 +1,19 @@
 import { PersistentSet } from "near-sdk-core";
 
-export const listers = new PersistentSet<string>("l_l");
+export const listers = new PersistentSet<string>("ba");
 
-export function getAdjacencyList(lister: string, vertex: string): PersistentSet<string> {
-    return new PersistentSet<string>("l_l:" + lister + ':' + vertex);
+export function getModulesByContextIdList(lister: string, contextId: string): PersistentSet<string> {
+    return new PersistentSet<string>("bb:" + lister + ':' + contextId);
+}
+
+export function getContextIdsByModuleList(lister: string, moduleName: string): PersistentSet<string> {
+    return new PersistentSet<string>("bc:" + lister + ':' + moduleName);
 }
 
 export function getContextIdsList(lister: string): PersistentSet<string> {
-    return new PersistentSet<string>("l_c:" + lister);
+    return new PersistentSet<string>("bd:" + lister);
 }
 
 export function getModulesList(lister: string): PersistentSet<string> {
-    return new PersistentSet<string>("l_m:" + lister);
+    return new PersistentSet<string>("be:" + lister);
 }

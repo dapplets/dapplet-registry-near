@@ -441,7 +441,7 @@ it('returns modules by context id and user', async () => {
   expect(names).toMatchObject([
     'twitter-adapter',
     'identity-feature',
-    'identity-adapter'
+    //'identity-adapter'
   ]);
 });
 
@@ -458,12 +458,12 @@ it('returns modules by context ids and users', async () => {
     [
       'twitter-adapter',
       'identity-feature',
-      'identity-adapter'
+      //'identity-adapter'
     ],
     [
       'instagram-adapter',
       'identity-feature',
-      'identity-adapter'
+      //'identity-adapter'
     ]
   ]);
 });
@@ -480,13 +480,11 @@ it('returns last version info by context ids', async () => {
   expect(names).toMatchObject([
     [
       { name: 'twitter-adapter', version: '1.0.1' },
-      { name: 'identity-feature', version: '1.0.1' },
-      { name: 'identity-adapter', version: '1.0.0' }
+      { name: 'identity-feature', version: '1.0.1' }
     ],
     [
       { name: 'instagram-adapter', version: '1.0.1' },
-      { name: 'identity-feature', version: '1.0.1' },
-      { name: 'identity-adapter', version: '1.0.0' }
+      { name: 'identity-feature', version: '1.0.1' }
     ]
   ]);
 });
